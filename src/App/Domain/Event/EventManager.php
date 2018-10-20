@@ -5,7 +5,7 @@ namespace App\Domain\Event;
 
 interface EventManager
 {
-    function publish(Event $event): void;
+    function addSubscriber(Subscriber $subscriber): void;
 
-    function addSubscriber(Subscriber $subscriber);
+    function publish(Event $event): void;
 }

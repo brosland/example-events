@@ -13,7 +13,7 @@ use Doctrine\ORM\Events;
 use Kdyby\RabbitMq\Connection;
 use Ramsey\Uuid\UuidInterface;
 
-class DoctrineEventRepository implements EventRepository, EventSubscriber
+final class DoctrineEventRepository implements EventRepository, EventSubscriber
 {
     /**
      * @var EntityManagerInterface

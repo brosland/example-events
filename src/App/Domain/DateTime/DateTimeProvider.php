@@ -7,6 +7,5 @@ use DateTimeImmutable;
 
 interface DateTimeProvider
 {
-
     function getNow(): DateTimeImmutable;
 }

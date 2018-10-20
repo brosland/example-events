@@ -9,7 +9,6 @@ use Exception;
 class BaseDateTimeProvider implements DateTimeProvider
 {
     /**
-     * @return DateTimeImmutable
      * @throws Exception
      */
     public function getNow(): DateTimeImmutable

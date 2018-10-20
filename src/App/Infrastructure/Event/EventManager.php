@@ -11,7 +11,7 @@ use App\Domain\Event\EventRepository;
 use App\Domain\Event\Subscriber;
 use InvalidArgumentException;
 
-class EventManager implements EventManagerInterface
+final class EventManager implements EventManagerInterface
 {
     /**
      * @var array
@@ -26,6 +26,14 @@ class EventManager implements EventManagerInterface
      */
     private $dateTimeProvider;
 
+
+    public function __construct(
+        EventRepository $eventRepository,
+        DateTimeProvider $dateTimeProvider
+    ) {
+        $this->eventRepository = $eventRepository;
+        $this->dateTimeProvider = $dateTimeProvider;
+    }
 
     public function addSubscriber(Subscriber $subscriber): void
     {
