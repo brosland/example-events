@@ -41,7 +41,9 @@ final class RmqEventConsumer extends BaseConsumer
             $eventUuid = ShortUuid::fromString($eventId);
             $event = $this->eventRepository->getEventById($eventUuid);
 
-            $this->eventManager->processEvent($event);
+            if (!$event->isProcessed()) {
+                $this->eventManager->processEvent($event);
+            }
 
             return BaseConsumer::MSG_ACK;
         } catch (EventNotFoundException $e) {
