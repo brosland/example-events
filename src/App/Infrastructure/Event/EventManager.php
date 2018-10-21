@@ -63,11 +63,12 @@ final class EventManager implements EventManagerInterface
 
     public function processEvent(EventEntity $eventEntity): void
     {
+        $event = $eventEntity->getEvent();
         $eventName = $eventEntity->getType();
 
         if (isset($this->listeners[$eventName])) {
             foreach ($this->listeners[$eventName] as $listener) {
-                $listener($eventEntity->getEvent());
+                $listener($event);
             }
         }
 

@@ -9,6 +9,7 @@ use App\Infrastructure\RabbitMQ\BaseConsumer;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use PhpAmqpLib\Message\AMQPMessage;
+use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Tracy\Debugger;
 
 final class RmqEventConsumer extends BaseConsumer
@@ -46,7 +47,7 @@ final class RmqEventConsumer extends BaseConsumer
             }
 
             return BaseConsumer::MSG_ACK;
-        } catch (EventNotFoundException $e) {
+        } catch (InvalidUuidStringException | EventNotFoundException $e) {
             Debugger::log($e);
 
             return BaseConsumer::MSG_REJECT;
