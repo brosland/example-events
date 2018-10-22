@@ -8,8 +8,10 @@ use App\Domain\Event\Event;
 use App\Domain\Event\EventEntity;
 use App\Domain\Event\EventManager as EventManagerInterface;
 use App\Domain\Event\EventRepository;
+use App\Domain\Event\Message\MessageEntity;
 use App\Domain\Event\Subscriber;
 use InvalidArgumentException;
+use RuntimeException;
 
 final class EventManager implements EventManagerInterface
 {
@@ -50,28 +52,45 @@ final class EventManager implements EventManagerInterface
                 throw new InvalidArgumentException($error);
             }
 
-            $this->listeners[$eventName][] = [$subscriber, $handleMethod];
+            $name = md5($handleMethod);
+            $this->listeners[$eventName][$name] = [$subscriber, $handleMethod];
         }
     }
 
     public function publish(Event $event): void
     {
+        $eventName = get_class($event);
         $eventEntity = new EventEntity($event);
+
+        if (isset($this->listeners[$eventName])) {
+            foreach ($this->listeners[$eventName] as $receiver => $callback) {
+                $eventEntity->addMessage($receiver);
+            }
+        } else {
+            $eventEntity->markProcessed($this->dateTimeProvider);
+        }
 
         $this->eventRepository->add($eventEntity);
     }
 
-    public function processEvent(EventEntity $eventEntity): void
+    public function deliverMessage(MessageEntity $message): void
     {
-        $event = $eventEntity->getEvent();
-        $eventName = $eventEntity->getType();
+        $event = $message->getEvent()->getEvent();
+        $eventName = get_class($event);
 
-        if (isset($this->listeners[$eventName])) {
-            foreach ($this->listeners[$eventName] as $listener) {
-                $listener($event);
-            }
+        if (!isset($this->listeners[$eventName][$message->getReceiver()])) {
+            throw new RuntimeException(
+                "Missing receiver '{$message->getReceiver()}' for the event '{$eventName}'."
+            );
         }
 
-        $eventEntity->markProcessed($this->dateTimeProvider);
+        $listener = $this->listeners[$eventName][$message->getReceiver()];
+        $listener($event);
+
+        $message->markDelivered($this->dateTimeProvider);
+
+        if (count($message->getEvent()->getUndeliveredMessages()) === 0) {
+            $message->getEvent()->markProcessed($this->dateTimeProvider);
+        };
     }
 }

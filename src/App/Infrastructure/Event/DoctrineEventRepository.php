@@ -6,35 +6,28 @@ namespace App\Infrastructure\Event;
 use App\Domain\Event\EventEntity;
 use App\Domain\Event\EventNotFoundException;
 use App\Domain\Event\EventRepository;
-use Doctrine\Common\EventSubscriber;
+use App\Domain\Event\Message\MessageRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Event\PostFlushEventArgs;
-use Doctrine\ORM\Events;
-use Kdyby\RabbitMq\Connection;
 use Ramsey\Uuid\UuidInterface;
 
-final class DoctrineEventRepository implements EventRepository, EventSubscriber
+final class DoctrineEventRepository implements EventRepository
 {
     /**
      * @var EntityManagerInterface
      */
     private $entityManager;
     /**
-     * @var Connection
+     * @var MessageRepository
      */
-    private $rabbitMqConnection;
-    /**
-     * @var EventEntity[]
-     */
-    private $newAddedEvents = [];
+    private $messageRepository;
 
 
     public function __construct(
         EntityManagerInterface $entityManager,
-        Connection $rabbitMqConnection
+        MessageRepository $messageRepository
     ) {
         $this->entityManager = $entityManager;
-        $this->rabbitMqConnection = $rabbitMqConnection;
+        $this->messageRepository = $messageRepository;
     }
 
     /**
@@ -56,22 +49,8 @@ final class DoctrineEventRepository implements EventRepository, EventSubscriber
     {
         $this->entityManager->persist($event);
 
-        $this->newAddedEvents[$event->getId()->toString()] = $event;
-    }
-
-    public function getSubscribedEvents(): array
-    {
-        return [Events::postFlush => 'sendEventsToProcess'];
-    }
-
-    public function sendEventsToProcess(PostFlushEventArgs $args): void
-    {
-        $producer = $this->rabbitMqConnection->getProducer('app.events');
-
-        foreach ($this->newAddedEvents as $id => $event) {
-            $producer->publish($id);
+        foreach ($event->getMessages() as $message) {
+            $this->messageRepository->add($message);
         }
-
-        $this->newAddedEvents = [];
     }
 }
